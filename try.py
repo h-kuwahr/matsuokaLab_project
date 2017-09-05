@@ -2,7 +2,8 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy import *
+from scipy import signal, interpolate
+from scipy.stats import zscore
 from mpl_toolkits.mplot3d import Axes3D
 import sys
 import datetime
@@ -23,6 +24,11 @@ Test_NN.add(Activation('relu'))
 Test_NN.add(Dense(1))
 Test_NN.summary()
 Test_NN.compile(optimizer='adam', loss='categorical_crossentropy')
+Pfan_NN = Sequential()
+Pfan_NN.add(Dense(6, input_dim=4))
+Pfan_NN.add(Activation('relu'))
+Pfan_NN.add(Dense(1))
+Pfan_NN.compile(optimizer='adam', loss='categorical_crossentropy')
 
 
 def getDiff(df, d, df_new):
@@ -58,22 +64,22 @@ Ffan11 = df.loc[:, ['24149']]
 Ffan12 = df.loc[:, ['24150']]
 EXH_windspeed = df.loc[:, ['28596']]
 Total_power1.describe()
-df_TaskCPU = CPU_usage1.loc[:, ['value']]/float(20)
-df_TaskCPU = df_TaskCPU.rename(columns={'value': 'CPU_usage'})
-df_TaskCPU.index = pd.to_datetime(CPU_usage1.loc[:, 'truncated_dt'])
-X, Y, Z = list([]), list([]), list([])
-Fan = Ffan1.join(Ffan2, how='inner')
-Fan = Fan.join(Ffan3, how='inner')
-Fan = Fan.join(Ffan5, how='inner')
-Fan = Fan.join(Ffan6, how='inner')
-Fan = Fan.join(Ffan7, how='inner')
-Fan = Fan.join(Ffan8, how='inner')
-Fan = Fan.join(Ffan9, how='inner')
-Fan = Fan.join(Ffan10, how='inner')
-Fan = Fan.join(Ffan11, how='inner')
-Fan = Fan.join(Ffan12, how='inner')
-df_model = df_model.join(Fan, how='inner')
-# print(df_model)
+# df_TaskCPU = CPU_usage1.loc[:, ['value']]/float(20)
+# df_TaskCPU = df_TaskCPU.rename(columns={'value': 'CPU_usage'})
+# df_TaskCPU.index = pd.to_datetime(CPU_usage1.loc[:, 'truncated_dt'])
+# X, Y, Z = list([]), list([]), list([])
+df_model = df.loc[:, ['24144', '24162', '24163', '28596']]
+df_model_ip = df_model.interpolate()
+# df_model_ip.fillna(method='bfill').plot(figsize=(32, 4), alpha=0.5)
+df_model_std = df_model_ip.apply(lambda x: (x-x.mean())/x.std(), axis=0)
+df_model_ip.plot(figsize=(32, 4), alpha=0.5)
+df_model_std.index = pd.to_datetime(df_model_std.index)
+dataset = df_model_std.loc['20170508115700':'20170519064200',
+                           ['24144', '24162', '24163', '28596']]
+print(dataset)
+type(df_model_std.index[3])
+# df_model.plot(figsize=(32, 4), alpha=5)
+# CPU_usage1.hist(bins=1000)
 # print(df_Fan)
 # d = df_Ps.index[0]
 # df_Ps_new = df_Ps
@@ -88,7 +94,6 @@ df_model = df_model.join(Fan, how='inner')
 # fig = plt.figure()
 # ax = Axes3D(fig)
 # ax.scatter3D(df_model['T_Ambient'], df_model['CPU_usage'], df_model['Ps'])
-df_EW.plot(figsize=(64, 4), alpha=0.5)
 plt.show()
 # print(header)
 # print(data_server1)
